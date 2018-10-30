@@ -10,12 +10,6 @@ moon_data_labels = np.loadtxt("./moons/moons.y.csv", delimiter=',')
 
 train_data, val_data, train_label, val_label = train_test_split(moon_data, moon_data_labels, test_size=0.2)
 
-feature_1 = np.copy(train_data[:, 0])
-label_1 = np.copy(train_label)
-
-feature_2 = np.copy(train_data[:, 1])
-label_2 = np.copy(train_label)
-
 
 def plot_decision_boundary(title, classifier, col_1, col_2, label):
     plt.title(title)
@@ -147,6 +141,12 @@ def adaboost(num_weak_classifiers):
 
     return classifiers, classifier_weights
 
+
+feature_1 = np.copy(train_data[:, 0])
+label_1 = np.copy(train_label)
+
+feature_2 = np.copy(train_data[:, 1])
+label_2 = np.copy(train_label)
 
 ada_classifiers, ada_classifier_weights = adaboost(100)
 
