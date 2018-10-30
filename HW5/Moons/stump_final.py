@@ -126,7 +126,7 @@ moon_data_labels = np.loadtxt("./moons/moons.y.csv", delimiter=',')
 train_data, val_data, train_label, val_label = train_test_split(moon_data, moon_data_labels, test_size=0.2)
 
 param_train_data_size = 800
-param_weak_classifiers = 100
+param_weak_classifiers = 500
 
 moon_col_1, moon_label_1, moon_col_2, moon_label_2 = make_deep_copies()
 
@@ -156,7 +156,5 @@ for _ in np.arange(1, param_weak_classifiers, 1):
     test_err.append(get_adaboost_prediction(classifiers_arr, classifier_weights, val_data, val_label)[0])
 
 plot_train_test_err(training_err, test_err)
-
-
 plot_decision_region_adaboost(param_weak_classifiers, classifiers_arr, classifier_weights)
 plot_decision_region_adaboost(5, classifiers_arr, classifier_weights)
