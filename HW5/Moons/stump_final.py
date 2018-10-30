@@ -28,8 +28,7 @@ def plot_decision_boundary(title, classifier, col_1, col_2, label):
 def make_meshgrid(x, y, h=.02):
     x_min, x_max = x.min() - 0.2, x.max() + 0.2
     y_min, y_max = y.min() - 0.2, y.max() + 0.2
-    xx, yy = np.meshgrid(np.arange(x_min, x_max, h),
-                         np.arange(y_min, y_max, h))
+    xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
     return xx, yy
 
 
@@ -44,7 +43,7 @@ def plot_decision_boundary_adaboost(num_classifier_to_plot):
     ax.contourf(xx, yy, Z1, cmap=plt.cm.coolwarm, alpha=0.4)
     ax.axis('off')
     colors = ['red', 'green']
-    ax.scatter(train_data[:, 0], train_data[:, 1], c=train_label, cmap=matplotlib.colors.ListedColormap(colors))
+    ax.scatter(train_data[:, 0], train_data[:, 1], c=train_label, cmap=matplotlib.colors.ListedColormap(colors), s=1)
     ax.set_title('decision boundary when num of classifiers = ' + str(num_classifier_to_plot))
     plt.xlabel("first column of moons dataset", axes=ax)
     plt.ylabel("second column of moons dataset", axes=ax)
@@ -148,7 +147,7 @@ label_1 = np.copy(train_label)
 feature_2 = np.copy(train_data[:, 1])
 label_2 = np.copy(train_label)
 
-ada_classifiers, ada_classifier_weights = adaboost(100)
+ada_classifiers, ada_classifier_weights = adaboost(200)
 
-plot_decision_boundary_adaboost(100)
+plot_decision_boundary_adaboost(200)
 plot_decision_boundary_adaboost(5)
