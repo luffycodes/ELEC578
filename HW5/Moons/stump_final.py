@@ -77,15 +77,16 @@ def get_stump_err_per_feature(sorted_feature_labels_probs):
             err_r -= sorted_feature_labels_probs[i][2]
         else:
             err_l += sorted_feature_labels_probs[i][2]
+        err = err_l + err_r
 
-        if err_l + err_r < stump_err_greater_1:
+        if err < stump_err_greater_1:
             stump_loc_greater_1 = i
-            stump_err_greater_1 = err_l + err_r
+            stump_err_greater_1 = err
             stump_val_greater_1 = sorted_feature_labels_probs[i][0]
 
-        if 1 - (err_r + err_l) < stump_err_lesser_1:
+        if 1 - err < stump_err_lesser_1:
             stump_loc_lesser_1 = i
-            stump_err_lesser_1 = 1 - (err_l + err_r)
+            stump_err_lesser_1 = 1 - err
             stump_val_lesser_1 = sorted_feature_labels_probs[i][0]
 
     if stump_err_lesser_1 < stump_err_greater_1:
