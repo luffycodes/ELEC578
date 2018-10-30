@@ -17,7 +17,7 @@ def plot_decision_boundary(title, classifier, col_1, col_2, label):
     plt.ylabel("second column of moons dataset")
     plt.scatter(col_1, col_2, color=np.array(['red' if x == -1 else 'green' for x in label]), s=1)
 
-    if classifier[0] - 1 == 0:
+    if classifier[0] == 0:
         plt.axvline(x=classifier[4])
     else:
         plt.axhline(y=classifier[4])
@@ -50,7 +50,7 @@ def plot_decision_boundary_adaboost(num_classifier_to_plot):
     plt.show()
 
 
-def get_stump_err_per_feature(sorted_feature_labels_probs):
+def get_stump_attributes_per_feature(sorted_feature_labels_probs):
     err_l = sorted_feature_labels_probs[0][2] if sorted_feature_labels_probs[0][1] == 1 else 0
     err_r = 0
     for i in np.arange(1, 800, 1):
@@ -73,17 +73,16 @@ def get_stump_err_per_feature(sorted_feature_labels_probs):
         return -1, np.argmin(err_arr) + 1, np.min(err_arr), sorted_feature_labels_probs[np.argmin(err_arr) + 1][0]
 
 
-def get_classifier(prob_dist):
-    sorted_feature_1_with_labels = sorted(zip(feature_1, label_1, np.copy(prob_dist)))
-    sorted_feature_2_with_labels = sorted(zip(feature_2, label_2, np.copy(prob_dist)))
+def get_classifier(prob_dist, *features_with_labels):
+    stump_attributes_per_feature = []
 
-    stump_pred_1, stump_loc_1, stump_err_1, stump_val_1 = get_stump_err_per_feature(sorted_feature_1_with_labels)
-    stump_pred_2, stump_loc_2, stump_err_2, stump_val_2 = get_stump_err_per_feature(sorted_feature_2_with_labels)
+    for feature_label in features_with_labels:
+        sorted_feature_label_dist = sorted(zip(feature_label[0], feature_label[1], np.copy(prob_dist)))
+        stump_attributes_per_feature.append(get_stump_attributes_per_feature(sorted_feature_label_dist))
 
-    if stump_err_1 < stump_err_2:
-        return 1, stump_pred_1, stump_loc_1, stump_err_1, stump_val_1, stump_err_1, 1 - stump_err_1
-    else:
-        return 2, stump_pred_2, stump_loc_2, stump_err_2, stump_val_2, stump_err_2, 1 - stump_err_2
+    arg_min_feature = np.argmin([x[2] for x in stump_attributes_per_feature])
+    stump_best_feature = stump_attributes_per_feature[arg_min_feature]
+    return arg_min_feature,  stump_best_feature[0], stump_best_feature[1], stump_best_feature[2], stump_best_feature[3]
 
 
 def get_prediction_and_err(classifiers, classifier_weights, data, data_labels, only_predict=False):
@@ -92,7 +91,7 @@ def get_prediction_and_err(classifiers, classifier_weights, data, data_labels, o
     for j in np.arange(0, data.shape[0], 1):
         pred_j = 0
         for k, w in zip(classifiers, classifier_weights):
-            pred_k_j = k[1] if data[j, k[0] - 1] < k[4] else -k[1]
+            pred_k_j = k[1] if data[j, k[0]] < k[4] else -k[1]
             pred_j += pred_k_j * w
         pred_j = np.sign(pred_j)
         if not only_predict:
@@ -106,9 +105,9 @@ def get_prediction_and_err(classifiers, classifier_weights, data, data_labels, o
 
 def adaboost(num_weak_classifiers):
     weights_dist = np.ones(train_data.shape[0])/train_data.shape[0]
-    first_classifier = get_classifier(weights_dist)
+    first_classifier = get_classifier(weights_dist, (feature_1, label_1), (feature_2, label_2))
     classifiers = [first_classifier]
-    classifier_weights = [0.5 * np.log(first_classifier[6] / first_classifier[5])]
+    classifier_weights = [0.5 * np.log((1 - first_classifier[3]) / first_classifier[3])]
     training_err = [get_prediction_and_err(classifiers, classifier_weights, train_data, train_label)[0]]
     test_err = [get_prediction_and_err(classifiers, classifier_weights, val_data, val_label)[0]]
 
@@ -120,14 +119,14 @@ def adaboost(num_weak_classifiers):
         for j in np.arange(0, 800, 1):
             pred_j = 0
             for k, w in zip(classifiers, classifier_weights):
-                pred_k_j = k[1] if train_data[j, k[0] - 1] < k[4] else -k[1]
+                pred_k_j = k[1] if train_data[j, k[0]] < k[4] else -k[1]
                 pred_j += pred_k_j * w
 
             pred_j = np.exp(- train_label[j] * pred_j)
             weights_dist.append(pred_j)
-        iter_classifier = get_classifier(weights_dist/sum(weights_dist))
+        iter_classifier = get_classifier(weights_dist/sum(weights_dist), (feature_1, label_1), (feature_2, label_2))
         classifiers.append(iter_classifier)
-        classifier_weights.append(0.5 * np.log(iter_classifier[6] / iter_classifier[5]))
+        classifier_weights.append(0.5 * np.log((1 - iter_classifier[3]) / iter_classifier[3]))
         training_err.append(get_prediction_and_err(classifiers, classifier_weights, train_data, train_label)[0])
         test_err.append(get_prediction_and_err(classifiers, classifier_weights, val_data, val_label)[0])
 
@@ -147,7 +146,7 @@ label_1 = np.copy(train_label)
 feature_2 = np.copy(train_data[:, 1])
 label_2 = np.copy(train_label)
 
-ada_classifiers, ada_classifier_weights = adaboost(200)
+ada_classifiers, ada_classifier_weights = adaboost(100)
 
-plot_decision_boundary_adaboost(200)
+plot_decision_boundary_adaboost(100)
 plot_decision_boundary_adaboost(5)
