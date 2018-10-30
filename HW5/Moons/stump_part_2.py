@@ -113,8 +113,21 @@ def adaboost(num_weak_classifiers):
     # Plotting training data
     plt.title("Scatter plot and Linear boundary : Training data")
     plt.xlabel("First column of moons.x.csv")
-    plt.ylabel("First column of moons.x.csv")
+    plt.ylabel("Second column of moons.x.csv")
     plt.scatter(feature_1, feature_2, color=color, s=1)
+
+    if first_classifier[0] - 1 == 0:
+        plt.axvline(x=first_classifier[4])
+    else:
+        plt.axhline(y=first_classifier[4])
+
+    plt.show()
+
+    # Plotting testing data
+    plt.title("Scatter plot and Linear boundary : Test data")
+    plt.xlabel("First column of moons.x.csv")
+    plt.ylabel("Second column of moons.x.csv")
+    plt.scatter(val_data[:, 0], val_data[:, 1], color=np.array(['red' if x == -1 else 'green' for x in val_label]), s=1)
 
     if first_classifier[0] - 1 == 0:
         plt.axvline(x=first_classifier[4])
@@ -146,7 +159,7 @@ def adaboost(num_weak_classifiers):
             # Plotting training data
             plt.title("Scatter plot and Linear boundary : Training data")
             plt.xlabel("First column of moons.x.csv")
-            plt.ylabel("First column of moons.x.csv")
+            plt.ylabel("Second column of moons.x.csv")
             plt.scatter(feature_1, feature_2, color=color, s=1)
 
             if iter_classifier[0] - 1 == 0:
@@ -181,21 +194,31 @@ def make_meshgrid(x, y, h=.02):
 
 
 xx, yy = make_meshgrid(val_data[:, 0], val_data[:, 1])
-
 _, Z1 = get_error(classifiers=ada_classifiers, classifier_weights=ada_classifier_weights,
                   data=np.c_[xx.ravel(), yy.ravel()], data_labels=[], only_predict=True)
 Z1 = np.array(Z1)
 Z1 = Z1.reshape(xx.shape)
-
 fig, ax = plt.subplots()
-
 ax.contourf(xx, yy, Z1, cmap=plt.cm.coolwarm, alpha=0.4)
 ax.axis('off')
-
-# Plot also the training points
 colors = ['red', 'green']
-ax.scatter(val_data[:, 0], val_data[:, 1], c=val_label, cmap=matplotlib.colors.ListedColormap(colors))
+ax.scatter(train_data[:, 0], train_data[:, 1], c=train_label, cmap=matplotlib.colors.ListedColormap(colors))
+ax.set_title('Decision boundary, #Classifiers = 100')
+plt.xlabel("First column of moons.x.csv", axes=ax)
+plt.ylabel("Second column of moons.x.csv", axes=ax)
+plt.show()
 
-ax.set_title('boosting')
-
+xx, yy = make_meshgrid(val_data[:, 0], val_data[:, 1])
+_, Z1 = get_error(classifiers=ada_classifiers[0:5], classifier_weights=ada_classifier_weights[0:5],
+                  data=np.c_[xx.ravel(), yy.ravel()], data_labels=[], only_predict=True)
+Z1 = np.array(Z1)
+Z1 = Z1.reshape(xx.shape)
+fig, ax = plt.subplots()
+ax.contourf(xx, yy, Z1, cmap=plt.cm.coolwarm, alpha=0.4)
+ax.axis('off')
+colors = ['red', 'green']
+ax.scatter(train_data[:, 0], train_data[:, 1], c=train_label, cmap=matplotlib.colors.ListedColormap(colors))
+ax.set_title('Decision boundary, #Classifiers = 5')
+plt.xlabel("First column of moons.x.csv", axes=ax)
+plt.ylabel("Second column of moons.x.csv", axes=ax)
 plt.show()
