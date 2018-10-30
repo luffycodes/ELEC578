@@ -11,6 +11,15 @@ moon_data_labels = np.loadtxt("./moons/moons.y.csv", delimiter=',')
 train_data, val_data, train_label, val_label = train_test_split(moon_data, moon_data_labels, test_size=0.2)
 
 
+def plot_train_test_err(training_err, test_err):
+    plt.xlabel("no. of  classifiers in Adaboost")
+    plt.ylabel("error")
+    plt.plot(training_err, '-b', label='training error')
+    plt.plot(test_err, '-r', label='test error')
+    plt.legend(loc='upper right')
+    plt.show()
+
+
 def plot_decision_boundary(title, classifier, col_1, col_2, label):
     plt.title(title)
     plt.xlabel("first column of moons dataset")
@@ -130,12 +139,7 @@ def run_adaboost(num_weak_classifiers):
         training_err.append(get_adaboost_prediction(classifiers_arr, classifier_weights, train_data, train_label)[0])
         test_err.append(get_adaboost_prediction(classifiers_arr, classifier_weights, val_data, val_label)[0])
 
-    plt.xlabel("no. of  classifiers in Adaboost")
-    plt.ylabel("error")
-    plt.plot(training_err, '-b', label='training error')
-    plt.plot(test_err, '-r', label='test error')
-    plt.legend(loc='upper right')
-    plt.show()
+    plot_train_test_err(training_err, test_err)
 
     return classifiers_arr, classifier_weights
 
