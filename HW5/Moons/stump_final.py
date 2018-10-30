@@ -60,6 +60,14 @@ def get_classifier_weight(x):
     return 0.5 * np.log((1 - x)/x)
 
 
+def get_ada_classifier_prediction(classifiers, classifier_weights, data, j):
+    pred_j = 0
+    for k, w in zip(classifiers, classifier_weights):
+        pred_k_j = k[1] if data[j, k[0]] < k[4] else -k[1]
+        pred_j += pred_k_j * w
+    return pred_j
+
+
 def get_stump_attributes_per_feature(sorted_feature_labels_probs):
     err_l = sorted_feature_labels_probs[0][2] if sorted_feature_labels_probs[0][1] == 1 else 0
     err_r = 0
@@ -99,10 +107,7 @@ def get_adaboost_prediction(classifiers, classifier_weights, data, data_labels, 
     err = 0
     label_predict = []
     for j in np.arange(0, data.shape[0], 1):
-        pred_j = 0
-        for k, w in zip(classifiers, classifier_weights):
-            pred_k_j = k[1] if data[j, k[0]] < k[4] else -k[1]
-            pred_j += pred_k_j * w
+        pred_j = get_ada_classifier_prediction(classifiers, classifier_weights, data, j)
         pred_j = np.sign(pred_j)
         if not only_predict:
             err += int(pred_j != data_labels[j])
@@ -131,11 +136,7 @@ def run_adaboost(num_weak_classifiers):
     for _ in np.arange(1, num_weak_classifiers, 1):
         weights_dist = []
         for j in np.arange(0, train_data.shape[0], 1):
-            pred_j = 0
-            for k, w in zip(classifiers_arr, classifier_weights):
-                pred_k_j = k[1] if train_data[j, k[0]] < k[4] else -k[1]
-                pred_j += pred_k_j * w
-
+            pred_j = get_ada_classifier_prediction(classifiers_arr, classifier_weights, train_data, j)
             pred_j = np.exp(- train_label[j] * pred_j)
             weights_dist.append(pred_j)
         iter_classifier = get_classifier(weights_dist/sum(weights_dist), (moon_col_1, moon_label_1), (moon_col_2, moon_label_2))
