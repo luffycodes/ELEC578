@@ -34,7 +34,7 @@ def make_meshgrid(x, y, h=.02):
     return xx, yy
 
 
-def plot_decision_region_adaboost(num_classifier_to_plot):
+def plot_decision_region_adaboost(num_classifier_to_plot, ada_classifiers, ada_classifier_weights):
     xx, yy = make_meshgrid(val_data[:, 0], val_data[:, 1])
     _, Z1 = get_adaboost_prediction(classifiers=ada_classifiers[0:num_classifier_to_plot],
                                     classifier_weights=ada_classifier_weights[0:num_classifier_to_plot],
@@ -61,11 +61,11 @@ def get_classifier_weight(x):
 
 
 def get_ada_classifier_prediction(classifiers, classifier_weights, data, j):
-    pred_j = 0
-    for k, w in zip(classifiers, classifier_weights):
-        pred_k_j = k[1] if data[j, k[0]] < k[4] else -k[1]
-        pred_j += pred_k_j * w
-    return pred_j
+    class_pred = 0
+    for classifier, weight in zip(classifiers, classifier_weights):
+        pred_k_j = classifier[1] if data[j, classifier[0]] < classifier[4] else -classifier[1]
+        class_pred += pred_k_j * weight
+    return class_pred
 
 
 def get_stump_attributes_per_feature(sorted_feature_labels_probs):
@@ -118,38 +118,6 @@ def get_adaboost_prediction(classifiers, classifier_weights, data, data_labels, 
     return err, label_predict
 
 
-def run_adaboost(num_classifiers):
-    moon_col_1, moon_label_1, moon_col_2, moon_label_2 = make_deep_copies()
-
-    uniform_dist = np.ones(train_data.shape[0])/train_data.shape[0]
-    uniform_dist_classifier = get_classifier(uniform_dist, (moon_col_1, moon_label_1), (moon_col_2, moon_label_2))
-
-    classifiers_arr = [uniform_dist_classifier]
-    classifier_weights = [get_classifier_weight(uniform_dist_classifier[3])]
-
-    training_err = [get_adaboost_prediction(classifiers_arr, classifier_weights, train_data, train_label)[0]]
-    test_err = [get_adaboost_prediction(classifiers_arr, classifier_weights, val_data, val_label)[0]]
-
-    plot_decision_boundary("stump for training data", uniform_dist_classifier, moon_col_1, moon_col_2, train_label)
-    plot_decision_boundary("stump for test data", uniform_dist_classifier, val_data[:, 0], val_data[:, 1], val_label)
-
-    for _ in np.arange(1, num_classifiers, 1):
-        weights_dist = []
-        for j in np.arange(0, train_data.shape[0], 1):
-            pred_j = get_ada_classifier_prediction(classifiers_arr, classifier_weights, train_data, j)
-            pred_j = np.exp(- train_label[j] * pred_j)
-            weights_dist.append(pred_j)
-        iter_classifier = get_classifier(weights_dist/sum(weights_dist), (moon_col_1, moon_label_1), (moon_col_2, moon_label_2))
-        classifiers_arr.append(iter_classifier)
-        classifier_weights.append(get_classifier_weight(iter_classifier[3]))
-        training_err.append(get_adaboost_prediction(classifiers_arr, classifier_weights, train_data, train_label)[0])
-        test_err.append(get_adaboost_prediction(classifiers_arr, classifier_weights, val_data, val_label)[0])
-
-    plot_train_test_err(training_err, test_err)
-
-    return classifiers_arr, classifier_weights
-
-
 np.random.seed(42)
 
 moon_data = np.loadtxt("./moons/moons.x.csv", delimiter=',')
@@ -159,7 +127,36 @@ train_data, val_data, train_label, val_label = train_test_split(moon_data, moon_
 
 param_train_data_size = 800
 param_weak_classifiers = 100
-ada_classifiers, ada_classifier_weights = run_adaboost(param_weak_classifiers)
 
-plot_decision_region_adaboost(param_weak_classifiers)
-plot_decision_region_adaboost(5)
+moon_col_1, moon_label_1, moon_col_2, moon_label_2 = make_deep_copies()
+
+uniform_dist = np.ones(train_data.shape[0]) / train_data.shape[0]
+uniform_dist_classifier = get_classifier(uniform_dist, (moon_col_1, moon_label_1), (moon_col_2, moon_label_2))
+
+classifiers_arr = [uniform_dist_classifier]
+classifier_weights = [get_classifier_weight(uniform_dist_classifier[3])]
+
+training_err = [get_adaboost_prediction(classifiers_arr, classifier_weights, train_data, train_label)[0]]
+test_err = [get_adaboost_prediction(classifiers_arr, classifier_weights, val_data, val_label)[0]]
+
+plot_decision_boundary("stump for training data", uniform_dist_classifier, moon_col_1, moon_col_2, train_label)
+plot_decision_boundary("stump for test data", uniform_dist_classifier, val_data[:, 0], val_data[:, 1], val_label)
+
+for _ in np.arange(1, param_weak_classifiers, 1):
+    weights_dist = []
+    for j in np.arange(0, train_data.shape[0], 1):
+        pred_j = get_ada_classifier_prediction(classifiers_arr, classifier_weights, train_data, j)
+        pred_j = np.exp(- train_label[j] * pred_j)
+        weights_dist.append(pred_j)
+    iter_classifier = get_classifier(weights_dist / sum(weights_dist), (moon_col_1, moon_label_1),
+                                     (moon_col_2, moon_label_2))
+    classifiers_arr.append(iter_classifier)
+    classifier_weights.append(get_classifier_weight(iter_classifier[3]))
+    training_err.append(get_adaboost_prediction(classifiers_arr, classifier_weights, train_data, train_label)[0])
+    test_err.append(get_adaboost_prediction(classifiers_arr, classifier_weights, val_data, val_label)[0])
+
+plot_train_test_err(training_err, test_err)
+
+
+plot_decision_region_adaboost(param_weak_classifiers, classifiers_arr, classifier_weights)
+plot_decision_region_adaboost(5, classifiers_arr, classifier_weights)
