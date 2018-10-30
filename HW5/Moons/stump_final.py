@@ -19,41 +19,36 @@ label_2 = np.copy(train_label)
 color = np.array(['red' if x == -1 else 'green' for x in train_label])
 
 
-def get_stump_err_per_feature(sorted_feature_labels_weights):
-    # Initialization left and right error with stump after zeroth element
-    err_l = 0
-    if sorted_feature_labels_weights[0][1] == 1:
-        err_l = sorted_feature_labels_weights[0][2]
-
+def get_stump_err_per_feature(sorted_feature_labels_probs):
+    err_l = sorted_feature_labels_probs[0][2] if sorted_feature_labels_probs[0][1] == 1 else 0
     err_r = 0
     for i in np.arange(1, 800, 1):
-        if sorted_feature_labels_weights[i][1] == -1:
-            err_r += sorted_feature_labels_weights[i][2]
+        if sorted_feature_labels_probs[i][1] == -1:
+            err_r += sorted_feature_labels_probs[i][2]
 
-    # Moving the stump, updating left and right errors
     stump_loc_greater_1 = 1
-    stump_val_greater_1 = sorted_feature_labels_weights[0][0]
+    stump_val_greater_1 = sorted_feature_labels_probs[0][0]
     stump_err_greater_1 = err_l + err_r
 
     stump_loc_lesser_1 = 1
-    stump_val_lesser_1 = sorted_feature_labels_weights[0][0]
+    stump_val_lesser_1 = sorted_feature_labels_probs[0][0]
     stump_err_lesser_1 = 1 - (err_l + err_r)
 
     for i in np.arange(2, 799, 1):
-        if sorted_feature_labels_weights[i][1] == -1:
-            err_r -= sorted_feature_labels_weights[i][2]
+        if sorted_feature_labels_probs[i][1] == -1:
+            err_r -= sorted_feature_labels_probs[i][2]
         else:
-            err_l += sorted_feature_labels_weights[i][2]
+            err_l += sorted_feature_labels_probs[i][2]
 
         if err_l + err_r < stump_err_greater_1:
             stump_loc_greater_1 = i
             stump_err_greater_1 = err_l + err_r
-            stump_val_greater_1 = sorted_feature_labels_weights[i][0]
+            stump_val_greater_1 = sorted_feature_labels_probs[i][0]
 
         if 1 - (err_r + err_l) < stump_err_lesser_1:
             stump_loc_lesser_1 = i
             stump_err_lesser_1 = 1 - (err_l + err_r)
-            stump_val_lesser_1 = sorted_feature_labels_weights[i][0]
+            stump_val_lesser_1 = sorted_feature_labels_probs[i][0]
 
     if stump_err_lesser_1 < stump_err_greater_1:
         return 1, stump_loc_lesser_1, stump_err_lesser_1, stump_val_lesser_1
@@ -61,12 +56,9 @@ def get_stump_err_per_feature(sorted_feature_labels_weights):
         return -1, stump_loc_greater_1, stump_err_greater_1, stump_val_greater_1
 
 
-def get_classifier(weights_dist):
-    weights_dist_1 = np.copy(weights_dist)
-    weights_dist_2 = np.copy(weights_dist)
-
-    sorted_feature_1_with_labels = sorted(zip(feature_1, label_1, weights_dist_1))
-    sorted_feature_2_with_labels = sorted(zip(feature_2, label_2, weights_dist_2))
+def get_classifier(prob_dist):
+    sorted_feature_1_with_labels = sorted(zip(feature_1, label_1, np.copy(prob_dist)))
+    sorted_feature_2_with_labels = sorted(zip(feature_2, label_2, np.copy(prob_dist)))
 
     stump_pred_1, stump_loc_1, stump_err_1, stump_val_1 = get_stump_err_per_feature(sorted_feature_1_with_labels)
     stump_pred_2, stump_loc_2, stump_err_2, stump_val_2 = get_stump_err_per_feature(sorted_feature_2_with_labels)
