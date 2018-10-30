@@ -65,17 +65,14 @@ def get_stump_err_per_feature(sorted_feature_labels_probs):
             err_r += sorted_feature_labels_probs[i][2]
 
     err_arr = [err_l + err_r]
-    one_minus_err = [1 - (err_l + err_r)]
-
     for i in np.arange(1, 799, 1):
         if sorted_feature_labels_probs[i][1] == -1:
             err_r -= sorted_feature_labels_probs[i][2]
         else:
             err_l += sorted_feature_labels_probs[i][2]
-        err = err_l + err_r
-        err_arr.append(err)
-        one_minus_err.append(1 - err)
+        err_arr.append(err_l + err_r)
 
+    one_minus_err = 1 - np.array(err_arr)
     if np.min(one_minus_err) < np.min(err_arr):
         argmin_one_minus_err = np.argmin(one_minus_err)
         return 1, argmin_one_minus_err + 1, np.min(one_minus_err), sorted_feature_labels_probs[argmin_one_minus_err + 1][0]
