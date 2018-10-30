@@ -114,7 +114,7 @@ def adaboost(num_weak_classifiers):
     plt.title("Scatter plot and Linear boundary : Training data")
     plt.xlabel("First column of moons.x.csv")
     plt.ylabel("Second column of moons.x.csv")
-    plt.scatter(feature_1, feature_2, color=color, s=1)
+    plt.scatter(feature_1, feature_2, color=color)
 
     if first_classifier[0] - 1 == 0:
         plt.axvline(x=first_classifier[4])
@@ -127,7 +127,7 @@ def adaboost(num_weak_classifiers):
     plt.title("Scatter plot and Linear boundary : Test data")
     plt.xlabel("First column of moons.x.csv")
     plt.ylabel("Second column of moons.x.csv")
-    plt.scatter(val_data[:, 0], val_data[:, 1], color=np.array(['red' if x == -1 else 'green' for x in val_label]), s=1)
+    plt.scatter(val_data[:, 0], val_data[:, 1], color=np.array(['red' if x == -1 else 'green' for x in val_label]))
 
     if first_classifier[0] - 1 == 0:
         plt.axvline(x=first_classifier[4])
