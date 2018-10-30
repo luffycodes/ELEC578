@@ -1,3 +1,4 @@
+import matplotlib
 import numpy as np
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
@@ -76,19 +77,26 @@ def get_classifier(weights_dist):
         return 2, stump_pred_2, stump_loc_2, stump_err_2, stump_val_2, stump_err_2, 1 - stump_err_2
 
 
-def get_error(classifiers, classifier_weights, train=True):
+def get_error(classifiers, classifier_weights, data, data_labels, only_predict=False):
     err = 0
-    for j in np.arange(0, 800, 1):
+    label_predict = []
+    for j in np.arange(0, data.shape[0], 1):
         pred_j = 0
         for k, w in zip(classifiers, classifier_weights):
             if k[1] == 1:
-                pred_k_j = 1 if train_data[j, k[0] - 1] < k[4] else -1
+                pred_k_j = 1 if data[j, k[0] - 1] < k[4] else -1
             else:
-                pred_k_j = -1 if train_data[j, k[0] - 1] < k[4] else 1
+                pred_k_j = -1 if data[j, k[0] - 1] < k[4] else 1
             pred_j += pred_k_j * w
-        err += int(np.sign(pred_j) != train_label[j])
-    err = err/800
-    return err
+
+        pred_j = np.sign(pred_j)
+        if not only_predict:
+            err += int(pred_j != data_labels[j])
+        label_predict.append(pred_j)
+
+    if not only_predict:
+        err = err/data.shape[0]
+    return err, label_predict
 
 
 debug = False
@@ -99,7 +107,8 @@ def adaboost(num_weak_classifiers):
     first_classifier = get_classifier(weights_dist)
     classifiers = [first_classifier]
     classifier_weights = [0.5 * np.log(first_classifier[6] / first_classifier[5])]
-    training_err = [get_error(classifiers, classifier_weights)]
+    training_err = [get_error(classifiers, classifier_weights, train_data, train_label)[0]]
+    test_err = [get_error(classifiers, classifier_weights, val_data, val_label)[0]]
 
     # Plotting training data
     plt.title("Scatter plot and Linear boundary : Training data")
@@ -130,7 +139,8 @@ def adaboost(num_weak_classifiers):
         iter_classifier = get_classifier(weights_dist/sum(weights_dist))
         classifiers.append(iter_classifier)
         classifier_weights.append(0.5 * np.log(iter_classifier[6] / iter_classifier[5]))
-        training_err.append(get_error(classifiers, classifier_weights))
+        training_err.append(get_error(classifiers, classifier_weights, train_data, train_label)[0])
+        test_err.append(get_error(classifiers, classifier_weights, val_data, val_label)[0])
 
         if debug:
             # Plotting training data
@@ -146,9 +156,46 @@ def adaboost(num_weak_classifiers):
 
             plt.show()
 
+    plt.xlabel("#Classifiers")
+    plt.ylabel("Training error")
     plt.plot(training_err)
     plt.show()
 
+    plt.xlabel("#Classifiers")
+    plt.ylabel("Test error")
+    plt.plot(test_err)
+    plt.show()
 
-adaboost(100)
+    return classifiers, classifier_weights
 
+
+ada_classifiers, ada_classifier_weights = adaboost(100)
+
+
+def make_meshgrid(x, y, h=.02):
+    x_min, x_max = x.min() - 0.2, x.max() + 0.2
+    y_min, y_max = y.min() - 0.2, y.max() + 0.2
+    xx, yy = np.meshgrid(np.arange(x_min, x_max, h),
+                         np.arange(y_min, y_max, h))
+    return xx, yy
+
+
+xx, yy = make_meshgrid(val_data[:, 0], val_data[:, 1])
+
+_, Z1 = get_error(classifiers=ada_classifiers, classifier_weights=ada_classifier_weights,
+                  data=np.c_[xx.ravel(), yy.ravel()], data_labels=[], only_predict=True)
+Z1 = np.array(Z1)
+Z1 = Z1.reshape(xx.shape)
+
+fig, ax = plt.subplots()
+
+ax.contourf(xx, yy, Z1, cmap=plt.cm.coolwarm, alpha=0.4)
+ax.axis('off')
+
+# Plot also the training points
+colors = ['red', 'green']
+ax.scatter(val_data[:, 0], val_data[:, 1], c=val_label, cmap=matplotlib.colors.ListedColormap(colors))
+
+ax.set_title('boosting')
+
+plt.show()
