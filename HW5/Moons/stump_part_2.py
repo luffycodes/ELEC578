@@ -18,6 +18,7 @@ label_2 = np.copy(train_label)
 
 color = np.array(['red' if x == -1 else 'green' for x in train_label])
 
+
 def get_stump_err_per_feature(sorted_feature_labels_weights):
     # Initialization left and right error with stump after zeroth element
     err_l = 0
