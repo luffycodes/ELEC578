@@ -118,7 +118,7 @@ def get_adaboost_prediction(classifiers, classifier_weights, data, data_labels, 
     return err, label_predict
 
 
-def run_adaboost(num_weak_classifiers):
+def run_adaboost(num_classifiers):
     moon_col_1, moon_label_1, moon_col_2, moon_label_2 = make_deep_copies()
 
     uniform_dist = np.ones(train_data.shape[0])/train_data.shape[0]
@@ -133,7 +133,7 @@ def run_adaboost(num_weak_classifiers):
     plot_decision_boundary("stump for training data", uniform_dist_classifier, moon_col_1, moon_col_2, train_label)
     plot_decision_boundary("stump for test data", uniform_dist_classifier, val_data[:, 0], val_data[:, 1], val_label)
 
-    for _ in np.arange(1, num_weak_classifiers, 1):
+    for _ in np.arange(1, num_classifiers, 1):
         weights_dist = []
         for j in np.arange(0, train_data.shape[0], 1):
             pred_j = get_ada_classifier_prediction(classifiers_arr, classifier_weights, train_data, j)
