@@ -32,11 +32,11 @@ def make_meshgrid(x, y, h=.02):
     return xx, yy
 
 
-def plot_decision_boundary_adaboost(num_classifier_to_plot):
+def plot_decision_region_adaboost(num_classifier_to_plot):
     xx, yy = make_meshgrid(val_data[:, 0], val_data[:, 1])
-    _, Z1 = get_prediction_and_err(classifiers=ada_classifiers[0:num_classifier_to_plot],
-                                   classifier_weights=ada_classifier_weights[0:num_classifier_to_plot],
-                                   data=np.c_[xx.ravel(), yy.ravel()], data_labels=[], only_predict=True)
+    _, Z1 = get_adaboost_prediction(classifiers=ada_classifiers[0:num_classifier_to_plot],
+                                    classifier_weights=ada_classifier_weights[0:num_classifier_to_plot],
+                                    data=np.c_[xx.ravel(), yy.ravel()], data_labels=[], only_predict=True)
     Z1 = np.array(Z1)
     Z1 = Z1.reshape(xx.shape)
     fig, ax = plt.subplots()
@@ -85,7 +85,7 @@ def get_classifier(prob_dist, *features_with_labels):
     return arg_min_feature,  stump_best_feature[0], stump_best_feature[1], stump_best_feature[2], stump_best_feature[3]
 
 
-def get_prediction_and_err(classifiers, classifier_weights, data, data_labels, only_predict=False):
+def get_adaboost_prediction(classifiers, classifier_weights, data, data_labels, only_predict=False):
     err = 0
     label_predict = []
     for j in np.arange(0, data.shape[0], 1):
@@ -103,32 +103,32 @@ def get_prediction_and_err(classifiers, classifier_weights, data, data_labels, o
     return err, label_predict
 
 
-def adaboost(num_weak_classifiers):
-    weights_dist = np.ones(train_data.shape[0])/train_data.shape[0]
-    first_classifier = get_classifier(weights_dist, (feature_1, label_1), (feature_2, label_2))
-    classifiers = [first_classifier]
-    classifier_weights = [0.5 * np.log((1 - first_classifier[3]) / first_classifier[3])]
-    training_err = [get_prediction_and_err(classifiers, classifier_weights, train_data, train_label)[0]]
-    test_err = [get_prediction_and_err(classifiers, classifier_weights, val_data, val_label)[0]]
+def run_adaboost(num_weak_classifiers):
+    uniform_dist = np.ones(train_data.shape[0])/train_data.shape[0]
+    uniform_dist_classifier = get_classifier(uniform_dist, (feature_1, label_1), (feature_2, label_2))
+    classifiers_arr = [uniform_dist_classifier]
+    classifier_weights = [0.5 * np.log((1 - uniform_dist_classifier[3]) / uniform_dist_classifier[3])]
+    training_err = [get_adaboost_prediction(classifiers_arr, classifier_weights, train_data, train_label)[0]]
+    test_err = [get_adaboost_prediction(classifiers_arr, classifier_weights, val_data, val_label)[0]]
 
-    plot_decision_boundary("linear boundary for training data", first_classifier, feature_1, feature_2, train_label)
-    plot_decision_boundary("linear boundary for test data", first_classifier, val_data[:, 0], val_data[:, 1], val_label)
+    plot_decision_boundary("stump for training data", uniform_dist_classifier, feature_1, feature_2, train_label)
+    plot_decision_boundary("stump for test data", uniform_dist_classifier, val_data[:, 0], val_data[:, 1], val_label)
 
-    for i in np.arange(1, num_weak_classifiers, 1):
+    for _ in np.arange(1, num_weak_classifiers, 1):
         weights_dist = []
-        for j in np.arange(0, 800, 1):
+        for j in np.arange(0, train_data.shape[0], 1):
             pred_j = 0
-            for k, w in zip(classifiers, classifier_weights):
+            for k, w in zip(classifiers_arr, classifier_weights):
                 pred_k_j = k[1] if train_data[j, k[0]] < k[4] else -k[1]
                 pred_j += pred_k_j * w
 
             pred_j = np.exp(- train_label[j] * pred_j)
             weights_dist.append(pred_j)
         iter_classifier = get_classifier(weights_dist/sum(weights_dist), (feature_1, label_1), (feature_2, label_2))
-        classifiers.append(iter_classifier)
+        classifiers_arr.append(iter_classifier)
         classifier_weights.append(0.5 * np.log((1 - iter_classifier[3]) / iter_classifier[3]))
-        training_err.append(get_prediction_and_err(classifiers, classifier_weights, train_data, train_label)[0])
-        test_err.append(get_prediction_and_err(classifiers, classifier_weights, val_data, val_label)[0])
+        training_err.append(get_adaboost_prediction(classifiers_arr, classifier_weights, train_data, train_label)[0])
+        test_err.append(get_adaboost_prediction(classifiers_arr, classifier_weights, val_data, val_label)[0])
 
     plt.xlabel("no. of  classifiers in Adaboost")
     plt.ylabel("error")
@@ -137,7 +137,7 @@ def adaboost(num_weak_classifiers):
     plt.legend(loc='upper right')
     plt.show()
 
-    return classifiers, classifier_weights
+    return classifiers_arr, classifier_weights
 
 
 feature_1 = np.copy(train_data[:, 0])
@@ -146,7 +146,8 @@ label_1 = np.copy(train_label)
 feature_2 = np.copy(train_data[:, 1])
 label_2 = np.copy(train_label)
 
-ada_classifiers, ada_classifier_weights = adaboost(100)
+param_weak_classifiers = 100
+ada_classifiers, ada_classifier_weights = run_adaboost(param_weak_classifiers)
 
-plot_decision_boundary_adaboost(100)
-plot_decision_boundary_adaboost(5)
+plot_decision_region_adaboost(param_weak_classifiers)
+plot_decision_region_adaboost(5)
