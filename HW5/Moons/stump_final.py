@@ -62,12 +62,12 @@ def plot_decision_region_adaboost(num_classifier_to_plot):
 def get_stump_attributes_per_feature(sorted_feature_labels_probs):
     err_l = sorted_feature_labels_probs[0][2] if sorted_feature_labels_probs[0][1] == 1 else 0
     err_r = 0
-    for i in np.arange(1, 800, 1):
+    for i in np.arange(1, param_train_data_size, 1):
         if sorted_feature_labels_probs[i][1] == -1:
             err_r += sorted_feature_labels_probs[i][2]
 
     err_arr = [err_l + err_r]
-    for i in np.arange(1, 799, 1):
+    for i in np.arange(1, param_train_data_size - 1, 1):
         if sorted_feature_labels_probs[i][1] == -1:
             err_r -= sorted_feature_labels_probs[i][2]
         else:
@@ -150,6 +150,7 @@ label_1 = np.copy(train_label)
 feature_2 = np.copy(train_data[:, 1])
 label_2 = np.copy(train_label)
 
+param_train_data_size = 800
 param_weak_classifiers = 100
 ada_classifiers, ada_classifier_weights = run_adaboost(param_weak_classifiers)
 
