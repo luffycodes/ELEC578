@@ -64,35 +64,23 @@ def get_stump_err_per_feature(sorted_feature_labels_probs):
         if sorted_feature_labels_probs[i][1] == -1:
             err_r += sorted_feature_labels_probs[i][2]
 
-    stump_loc_greater_1 = 1
-    stump_val_greater_1 = sorted_feature_labels_probs[0][0]
-    stump_err_greater_1 = err_l + err_r
+    err_arr = [err_l + err_r]
+    one_minus_err = [1 - (err_l + err_r)]
 
-    stump_loc_lesser_1 = 1
-    stump_val_lesser_1 = sorted_feature_labels_probs[0][0]
-    stump_err_lesser_1 = 1 - (err_l + err_r)
-
-    for i in np.arange(2, 799, 1):
+    for i in np.arange(1, 799, 1):
         if sorted_feature_labels_probs[i][1] == -1:
             err_r -= sorted_feature_labels_probs[i][2]
         else:
             err_l += sorted_feature_labels_probs[i][2]
         err = err_l + err_r
+        err_arr.append(err)
+        one_minus_err.append(1 - err)
 
-        if err < stump_err_greater_1:
-            stump_loc_greater_1 = i
-            stump_err_greater_1 = err
-            stump_val_greater_1 = sorted_feature_labels_probs[i][0]
-
-        if 1 - err < stump_err_lesser_1:
-            stump_loc_lesser_1 = i
-            stump_err_lesser_1 = 1 - err
-            stump_val_lesser_1 = sorted_feature_labels_probs[i][0]
-
-    if stump_err_lesser_1 < stump_err_greater_1:
-        return 1, stump_loc_lesser_1, stump_err_lesser_1, stump_val_lesser_1
+    if np.min(one_minus_err) < np.min(err_arr):
+        argmin_one_minus_err = np.argmin(one_minus_err)
+        return 1, argmin_one_minus_err + 1, np.min(one_minus_err), sorted_feature_labels_probs[argmin_one_minus_err + 1][0]
     else:
-        return -1, stump_loc_greater_1, stump_err_greater_1, stump_val_greater_1
+        return -1, np.argmin(err_arr) + 1, np.min(err_arr), sorted_feature_labels_probs[np.argmin(err_arr) + 1][0]
 
 
 def get_classifier(prob_dist):
