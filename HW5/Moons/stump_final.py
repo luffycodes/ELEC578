@@ -3,13 +3,6 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
 
-np.random.seed(42)
-
-moon_data = np.loadtxt("./moons/moons.x.csv", delimiter=',')
-moon_data_labels = np.loadtxt("./moons/moons.y.csv", delimiter=',')
-
-train_data, val_data, train_label, val_label = train_test_split(moon_data, moon_data_labels, test_size=0.2)
-
 
 def plot_train_test_err(training_err, test_err):
     plt.xlabel("no. of  classifiers in Adaboost")
@@ -57,6 +50,14 @@ def plot_decision_region_adaboost(num_classifier_to_plot):
     plt.xlabel("first column of moons dataset", axes=ax)
     plt.ylabel("second column of moons dataset", axes=ax)
     plt.show()
+
+
+def make_deep_copies():
+    return np.copy(train_data[:, 0]), np.copy(train_label), np.copy(train_data[:, 1]), np.copy(train_label)
+
+
+def get_classifier_weight(x):
+    return 0.5 * np.log((1 - x)/x)
 
 
 def get_stump_attributes_per_feature(sorted_feature_labels_probs):
@@ -113,14 +114,18 @@ def get_adaboost_prediction(classifiers, classifier_weights, data, data_labels, 
 
 
 def run_adaboost(num_weak_classifiers):
+    moon_col_1, moon_label_1, moon_col_2, moon_label_2 = make_deep_copies()
+
     uniform_dist = np.ones(train_data.shape[0])/train_data.shape[0]
-    uniform_dist_classifier = get_classifier(uniform_dist, (feature_1, label_1), (feature_2, label_2))
+    uniform_dist_classifier = get_classifier(uniform_dist, (moon_col_1, moon_label_1), (moon_col_2, moon_label_2))
+
     classifiers_arr = [uniform_dist_classifier]
-    classifier_weights = [0.5 * np.log((1 - uniform_dist_classifier[3]) / uniform_dist_classifier[3])]
+    classifier_weights = [get_classifier_weight(uniform_dist_classifier[3])]
+
     training_err = [get_adaboost_prediction(classifiers_arr, classifier_weights, train_data, train_label)[0]]
     test_err = [get_adaboost_prediction(classifiers_arr, classifier_weights, val_data, val_label)[0]]
 
-    plot_decision_boundary("stump for training data", uniform_dist_classifier, feature_1, feature_2, train_label)
+    plot_decision_boundary("stump for training data", uniform_dist_classifier, moon_col_1, moon_col_2, train_label)
     plot_decision_boundary("stump for test data", uniform_dist_classifier, val_data[:, 0], val_data[:, 1], val_label)
 
     for _ in np.arange(1, num_weak_classifiers, 1):
@@ -133,9 +138,9 @@ def run_adaboost(num_weak_classifiers):
 
             pred_j = np.exp(- train_label[j] * pred_j)
             weights_dist.append(pred_j)
-        iter_classifier = get_classifier(weights_dist/sum(weights_dist), (feature_1, label_1), (feature_2, label_2))
+        iter_classifier = get_classifier(weights_dist/sum(weights_dist), (moon_col_1, moon_label_1), (moon_col_2, moon_label_2))
         classifiers_arr.append(iter_classifier)
-        classifier_weights.append(0.5 * np.log((1 - iter_classifier[3]) / iter_classifier[3]))
+        classifier_weights.append(get_classifier_weight(iter_classifier[3]))
         training_err.append(get_adaboost_prediction(classifiers_arr, classifier_weights, train_data, train_label)[0])
         test_err.append(get_adaboost_prediction(classifiers_arr, classifier_weights, val_data, val_label)[0])
 
@@ -144,11 +149,12 @@ def run_adaboost(num_weak_classifiers):
     return classifiers_arr, classifier_weights
 
 
-feature_1 = np.copy(train_data[:, 0])
-label_1 = np.copy(train_label)
+np.random.seed(42)
 
-feature_2 = np.copy(train_data[:, 1])
-label_2 = np.copy(train_label)
+moon_data = np.loadtxt("./moons/moons.x.csv", delimiter=',')
+moon_data_labels = np.loadtxt("./moons/moons.y.csv", delimiter=',')
+
+train_data, val_data, train_label, val_label = train_test_split(moon_data, moon_data_labels, test_size=0.2)
 
 param_train_data_size = 800
 param_weak_classifiers = 100
