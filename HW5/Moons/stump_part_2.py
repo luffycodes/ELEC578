@@ -61,9 +61,8 @@ def get_stump_err_per_feature(sorted_feature_labels_weights):
 
 
 def get_classifier(weights_dist):
-    normalized_weights_dist = weights_dist/np.sum(weights_dist)
-    weights_dist_1 = np.copy(normalized_weights_dist)
-    weights_dist_2 = np.copy(normalized_weights_dist)
+    weights_dist_1 = np.copy(weights_dist)
+    weights_dist_2 = np.copy(weights_dist)
 
     sorted_feature_1_with_labels = sorted(zip(feature_1, label_1, weights_dist_1))
     sorted_feature_2_with_labels = sorted(zip(feature_2, label_2, weights_dist_2))
@@ -72,52 +71,84 @@ def get_classifier(weights_dist):
     stump_pred_2, stump_loc_2, stump_err_2, stump_val_2 = get_stump_err_per_feature(sorted_feature_2_with_labels)
 
     if stump_err_1 < stump_err_2:
-        return 1, stump_pred_1, stump_loc_1, stump_err_1, stump_val_1, np.sum(weights_dist) - stump_err_1
+        return 1, stump_pred_1, stump_loc_1, stump_err_1, stump_val_1, stump_err_1, 1 - stump_err_1
     else:
-        return 2, stump_pred_2, stump_loc_2, stump_err_2, stump_val_2, np.sum(weights_dist) - stump_err_2
+        return 2, stump_pred_2, stump_loc_2, stump_err_2, stump_val_2, stump_err_2, 1 - stump_err_2
+
+
+def get_error(classifiers, classifier_weights, train=True):
+    err = 0
+    for j in np.arange(0, 800, 1):
+        pred_j = 0
+        for k, w in zip(classifiers, classifier_weights):
+            if k[1] == 1:
+                pred_k_j = 1 if train_data[j, k[0] - 1] < k[4] else -1
+            else:
+                pred_k_j = -1 if train_data[j, k[0] - 1] < k[4] else 1
+            pred_j += pred_k_j * w
+        err += int(np.sign(pred_j) != train_label[j])
+    err = err/800
+    return err
+
+
+debug = False
 
 
 def adaboost(num_weak_classifiers):
-    weights_dist = np.ones(train_data.shape[0])
+    weights_dist = np.ones(train_data.shape[0])/train_data.shape[0]
     first_classifier = get_classifier(weights_dist)
-    classifier_weights = [0.5 * np.log(first_classifier[5] / first_classifier[3])]
-    classifiers = []
-    for i in np.arange(1, num_weak_classifiers, 1):
+    classifiers = [first_classifier]
+    classifier_weights = [0.5 * np.log(first_classifier[6] / first_classifier[5])]
+    training_err = [get_error(classifiers, classifier_weights)]
 
+    # Plotting training data
+    plt.title("Scatter plot and Linear boundary : Training data")
+    plt.xlabel("First column of moons.x.csv")
+    plt.ylabel("First column of moons.x.csv")
+    plt.scatter(feature_1, feature_2, color=color, s=1)
+
+    if first_classifier[0] - 1 == 0:
+        plt.axvline(x=first_classifier[4])
+    else:
+        plt.axhline(y=first_classifier[4])
+
+    plt.show()
+
+    for i in np.arange(1, num_weak_classifiers, 1):
+        weights_dist = []
         for j in np.arange(0, 800, 1):
             pred_j = 0
             for k, w in zip(classifiers, classifier_weights):
                 if k[1] == 1:
-                    pred_k_j = 1 if train_data[j, k[0] - 1] < k[2] else -1
+                    pred_k_j = 1 if train_data[j, k[0] - 1] < k[4] else -1
                 else:
-                    pred_k_j = -1 if train_data[j, k[0] - 1] < k[2] else 1
+                    pred_k_j = -1 if train_data[j, k[0] - 1] < k[4] else 1
                 pred_j += pred_k_j * w
 
             pred_j = np.exp(- train_label[j] * pred_j)
             weights_dist.append(pred_j)
-        classifiers.append(get_classifier())
+        iter_classifier = get_classifier(weights_dist/sum(weights_dist))
+        classifiers.append(iter_classifier)
+        classifier_weights.append(0.5 * np.log(iter_classifier[6] / iter_classifier[5]))
+        training_err.append(get_error(classifiers, classifier_weights))
+
+        if debug:
+            # Plotting training data
+            plt.title("Scatter plot and Linear boundary : Training data")
+            plt.xlabel("First column of moons.x.csv")
+            plt.ylabel("First column of moons.x.csv")
+            plt.scatter(feature_1, feature_2, color=color, s=1)
+
+            if iter_classifier[0] - 1 == 0:
+                plt.axvline(x=iter_classifier[4])
+            else:
+                plt.axhline(y=iter_classifier[4])
+
+            plt.show()
+
+    plt.plot(training_err)
+    plt.show()
 
 
-# Plotting training data
-plt.title("Scatter plot and Linear boundary : Training data")
-plt.xlabel("First column of moons.x.csv")
-plt.ylabel("First column of moons.x.csv")
-plt.scatter(feature_1, feature_2, color=color, s=1)
-if feature_ID == 1:
-    plt.axvline(x=stump_val_f)
-else:
-    plt.axhline(y=stump_val_f)
+adaboost(100)
 
-plt.show()
-
-# Plotting test data
-plt.title("Scatter plot and Linear boundary : Test data")
-plt.xlabel("First column of moons.x.csv")
-plt.ylabel("First column of moons.x.csv")
-plt.scatter(val_data[:, 0], val_data[:, 1], color=np.array(['red' if x == -1 else 'green' for x in val_label]), s=1)
-if feature_ID == 1:
-    plt.axvline(x=stump_val_f)
-else:
-    plt.axhline(y=stump_val_f)
-
-plt.show()
