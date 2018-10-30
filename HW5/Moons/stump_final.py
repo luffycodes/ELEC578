@@ -63,8 +63,8 @@ def get_classifier_weight(x):
 def get_ada_classifier_prediction(classifiers, classifier_weights, data, j):
     class_pred = 0
     for classifier, weight in zip(classifiers, classifier_weights):
-        pred_k_j = classifier[1] if data[j, classifier[0]] < classifier[4] else -classifier[1]
-        class_pred += pred_k_j * weight
+        pred = classifier[1] if data[j, classifier[0]] < classifier[4] else -classifier[1]
+        class_pred += pred * weight
     return class_pred
 
 
