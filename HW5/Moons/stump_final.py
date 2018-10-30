@@ -24,7 +24,7 @@ def plot_decision_boundary(title, classifier, col_1, col_2, label):
     plt.title(title)
     plt.xlabel("first column of moons dataset")
     plt.ylabel("second column of moons dataset")
-    plt.scatter(col_1, col_2, color=np.array(['red' if x == -1 else 'green' for x in label]), s=1)
+    plt.scatter(col_1, col_2, color=np.array(['red' if x == -1 else 'blue' for x in label]), s=1)
 
     if classifier[0] == 0:
         plt.axvline(x=classifier[4])
@@ -51,7 +51,7 @@ def plot_decision_region_adaboost(num_classifier_to_plot):
     fig, ax = plt.subplots()
     ax.contourf(xx, yy, Z1, cmap=plt.cm.coolwarm, alpha=0.4)
     ax.axis('off')
-    colors = ['red', 'green']
+    colors = ['red', 'blue']
     ax.scatter(train_data[:, 0], train_data[:, 1], c=train_label, cmap=matplotlib.colors.ListedColormap(colors), s=1)
     ax.set_title('decision boundary when num of classifiers = ' + str(num_classifier_to_plot))
     plt.xlabel("first column of moons dataset", axes=ax)
