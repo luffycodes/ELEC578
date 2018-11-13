@@ -1,5 +1,18 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import contextlib
+
+
+# Generating random cluster means for Llyod's algorithm
+# "initializing randomly several times necessary to obtain a good clustering solution"
+@contextlib.contextmanager
+def temp_seed(seed):
+    state = np.random.get_state()
+    np.random.seed(seed)
+    try:
+        yield
+    finally:
+        np.random.set_state(state)
 
 
 def get_data():
@@ -69,41 +82,89 @@ def get_plus_plus_cluster_means_initializations(k):
 
 
 def get_random_cluster_means_initializations(k):
-    return np.random.rand(k, 2)
+    with temp_seed(np.random.seed(np.random.randint(0, 100))):
+        rand_cluster_means = np.random.rand(k, 2)
+    return rand_cluster_means
 
 
-def run_kmeans(k=4, kmeans_plus_plus=True, plot=False):
+def get_color(cluster_id):
+    if cluster_id == 0:
+        return 'blue'
+    elif cluster_id == 1:
+        return 'red'
+    elif cluster_id == 2:
+        return 'green'
+    else:
+        return 'pink'
+
+
+def run_kmeans(k=4, kmeans_plus_plus=True, plot=False, subplot=False, ax=None, trial_num=1):
     j_arr_plus = []
     if kmeans_plus_plus:
         cluster_means_arr = get_plus_plus_cluster_means_initializations(k)
     else:
         cluster_means_arr = get_random_cluster_means_initializations(k)
-    for _ in np.arange(0, 20, 1):
+    for _ in np.arange(0, iterations, 1):
         cluster_assignment_arr, cluster_size, J = get_cluster_assignments(cluster_means_arr, k)
         cluster_means_arr = update_cluster_means(cluster_assignment_arr, cluster_size, k)
         j_arr_plus.append(J)
 
     if plot:
-        if kmeans_plus_plus:
-            plt.plot(j_arr_plus, label="k-means++")
-        else:
-            plt.plot(j_arr_plus, label="k-means")
+        plt.plot(j_arr_plus, label="trial:"+str(trial_num))
         plt.ylabel("J")
         plt.xlabel("iterations")
+        if kmeans_plus_plus:
+            plt.title("k-means plus plus : J vs iterations")
+        else:
+            plt.title("llyod k-means : J vs iterations")
+
+    if subplot and not kmeans_plus_plus:
+        color = np.array([get_color(x) for x in cluster_assignment_arr])
+        ax.scatter(data[:, 1], data[:, 2], color=color, s=1)
 
     return j_arr_plus
 
 
 n = 1000
+iterations = 15
+trials = 20
 sqrt_2 = np.sqrt(2)
 data = get_data()
 
-run_kmeans(kmeans_plus_plus=True, plot=True)
-run_kmeans(kmeans_plus_plus=False, plot=True)
+# K MEANS with Random Initialization of Cluster means
+sub_plot_rand_seed_plot = True
+plot_J_simple_kmeans = False
+opt_J_simple_kmeans_trials = []
+llyod_rand_clusters = plt.figure()
+for i in np.arange(1, trials + 1, 1):
+    ax = llyod_rand_clusters.add_subplot(4, 5, i)
+    j_arr = run_kmeans(kmeans_plus_plus=False, plot=plot_J_simple_kmeans, trial_num=i, subplot=sub_plot_rand_seed_plot, ax=ax)
+    opt_J_simple_kmeans_trials.append(j_arr[-1])
 
-plt.legend()
-plt.show()
+if sub_plot_rand_seed_plot:
+    llyod_rand_clusters.show()
 
+if plot_J_simple_kmeans:
+    plt.legend()
+    plt.show()
+
+print(np.mean(np.array(opt_J_simple_kmeans_trials)), np.std(np.array(opt_J_simple_kmeans_trials)))
+
+
+# K MEANS PLUS PLUS
+opt_J_plus_plus_trials = []
+plot_J_plus = False
+for i in np.arange(1, trials + 1, 1):
+    j_arr = run_kmeans(kmeans_plus_plus=True, plot=plot_J_plus, trial_num=i)
+    opt_J_plus_plus_trials.append(j_arr[-1])
+
+if plot_J_plus:
+    plt.legend()
+    plt.show()
+
+print(np.mean(np.array(opt_J_plus_plus_trials)), np.std(np.array(opt_J_plus_plus_trials)))
+
+# BAYES INFORMATION
 bayes_info = []
 for num_clusters in np.arange(2, 15, 1):
     n_ = run_kmeans(k=num_clusters)[-1] + num_clusters * np.log(n)
