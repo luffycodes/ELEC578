@@ -1,9 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-n = 1000
-sqrt_2 = np.sqrt(2)
-
 
 def get_data():
     data_arr = []
@@ -20,10 +17,10 @@ def get_data():
     return np.asarray(data_arr)
 
 
-def get_cluster_assignments(cluster_means_arr):
+def get_cluster_assignments(cluster_means_arr, k=4):
     J = 0
     cluster_assignment_arr = []
-    cluster_size = np.zeros(4)
+    cluster_size = np.zeros(k)
 
     for pt in data:
         dist_pt_to_cluster_mean = []
@@ -38,13 +35,13 @@ def get_cluster_assignments(cluster_means_arr):
     return cluster_assignment_arr, cluster_size, J
 
 
-def update_cluster_means(cluster_assignment_arr, cluster_size):
-    iter_cluster_means_arr = np.zeros((4, 2))
+def update_cluster_means(cluster_assignment_arr, cluster_size, k=4):
+    iter_cluster_means_arr = np.zeros((k, 2))
 
     for pt, cluster_assignment in zip(data, cluster_assignment_arr):
         iter_cluster_means_arr[cluster_assignment] += pt[1:]
 
-    for i in np.arange(0, 4, 1):
+    for i in np.arange(0, k, 1):
         iter_cluster_means_arr[i] /= cluster_size[i]
 
     return iter_cluster_means_arr
@@ -75,25 +72,44 @@ def get_random_cluster_means_initializations(k):
     return np.random.rand(k, 2)
 
 
+def run_kmeans(k=4, kmeans_plus_plus=True, plot=False):
+    j_arr_plus = []
+    if kmeans_plus_plus:
+        cluster_means_arr = get_plus_plus_cluster_means_initializations(k)
+    else:
+        cluster_means_arr = get_random_cluster_means_initializations(k)
+    for _ in np.arange(0, 20, 1):
+        cluster_assignment_arr, cluster_size, J = get_cluster_assignments(cluster_means_arr, k)
+        cluster_means_arr = update_cluster_means(cluster_assignment_arr, cluster_size, k)
+        j_arr_plus.append(J)
+
+    if plot:
+        if kmeans_plus_plus:
+            plt.plot(j_arr_plus, label="k-means++")
+        else:
+            plt.plot(j_arr_plus, label="k-means")
+        plt.ylabel("J")
+        plt.xlabel("iterations")
+
+    return j_arr_plus
+
+
+n = 1000
+sqrt_2 = np.sqrt(2)
 data = get_data()
 
-J_arr_plus = []
-cluster_means_arr = get_plus_plus_cluster_means_initializations(4)
-for iter_num in np.arange(0, 20, 1):
-    cluster_assignment_arr, cluster_size, J = get_cluster_assignments(cluster_means_arr)
-    cluster_means_arr = update_cluster_means(cluster_assignment_arr, cluster_size)
-    J_arr_plus.append(J)
+run_kmeans(kmeans_plus_plus=True, plot=True)
+run_kmeans(kmeans_plus_plus=False, plot=True)
 
-plt.plot(J_arr_plus)
+plt.legend()
+plt.show()
 
+bayes_info = []
+for num_clusters in np.arange(2, 15, 1):
+    n_ = run_kmeans(k=num_clusters)[-1] + num_clusters * np.log(n)
+    bayes_info.append(n_)
 
-J_arr = []
-cluster_means_arr = get_random_cluster_means_initializations(4)
-for iter_num in np.arange(0, 20, 1):
-    cluster_assignment_arr, cluster_size, J = get_cluster_assignments(cluster_means_arr)
-    cluster_means_arr = update_cluster_means(cluster_assignment_arr, cluster_size)
-    J_arr.append(J)
-
-plt.plot(J_arr)
-
+plt.ylabel("Bayes Info")
+plt.xlabel("clusters")
+plt.plot(bayes_info)
 plt.show()
